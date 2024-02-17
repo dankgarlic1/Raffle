@@ -2,11 +2,20 @@
 pragma solidity ^0.8.8;
 import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
+
 error Raffle__notEnoughEthSent();
 error Raffle__TransferFailed();
 error Raffle_notOwner();
+error Raffle__NotOpen();
 
 contract Raffle is VRFConsumerBaseV2 {
+    /* Type Declarations */
+    enum RaffleState {
+        OPEN,
+        CALCULATING
+    }
+
     /* State Variables */
     address payable[] private s_players;
     address private immutable i_owner;
@@ -20,6 +29,7 @@ contract Raffle is VRFConsumerBaseV2 {
 
     /* Lottery Variables */
     address public s_recentWinner;
+    RaffleState private s_raffleState;
 
     /* Events */
     event RaffleEnter(address indexed players);
@@ -47,8 +57,8 @@ contract Raffle is VRFConsumerBaseV2 {
         i_vrfCoordianator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
-
         i_gasLane = gasLane;
+        s_raffleState = RaffleState.OPEN;
     }
 
     //enter raffle by paying some amount
@@ -61,12 +71,17 @@ contract Raffle is VRFConsumerBaseV2 {
         // Naming conevntion for making events is reversing the name,
         // for eg. th event for this function will be RaffleEnter()
 
+        if (s_raffleState != RaffleState.OPEN) {
+            revert Raffle__NotOpen();
+        }
+
         emit RaffleEnter(msg.sender);
     }
 
     function pickRandomWinner() external {
         //request the random number from chainlink
         //do something with it
+        s_raffleState = RaffleState.CALCULATING;
         uint256 requestId = i_vrfCoordianator.requestRandomWords(
             i_gasLane,
             i_subscriptionId,
@@ -87,6 +102,8 @@ contract Raffle is VRFConsumerBaseV2 {
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexOfWinner];
         s_recentWinner = recentWinner;
+        s_raffleState = RaffleState.OPEN;
+        s_players = new address payable[](0); //reseting the array after picking the winner
 
         (bool callSuccess, ) = recentWinner.call{value: address(this).balance}(
             ""
@@ -96,6 +113,20 @@ contract Raffle is VRFConsumerBaseV2 {
             revert Raffle__TransferFailed();
         }
         emit WinnerPicked(recentWinner);
+    }
+
+    /**
+     * @dev This is the function that the Chainlink Keeper nodes call
+     * they look for `upkeepNeeded` to return True.
+     * the following should be true for this to return true:
+     * 1. The time interval has passed between raffle runs.
+     * 2. The lottery is open.
+     * 3. The contract has ETH.
+     * 4. Implicity, your subscription is funded with LINK.
+     */
+
+    function checkUpkeep(bytes calldata /* checkData */) external override {
+        bool isOpen = (RaffleState.OPEN == s_raffleState); //meaning the bool is true if RaffleState.OPEN == s_raffleState
     }
 
     /* View/Pure Functions */
