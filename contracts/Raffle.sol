@@ -9,7 +9,7 @@ error Raffle__TransferFailed();
 error Raffle_notOwner();
 error Raffle__NotOpen();
 
-contract Raffle is VRFConsumerBaseV2 {
+contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     /* Type Declarations */
     enum RaffleState {
         OPEN,
@@ -30,6 +30,8 @@ contract Raffle is VRFConsumerBaseV2 {
     /* Lottery Variables */
     address public s_recentWinner;
     RaffleState private s_raffleState;
+    uint256 private s_lastTimeStamp;
+    uint256 private immutable i_interval;
 
     /* Events */
     event RaffleEnter(address indexed players);
@@ -47,6 +49,7 @@ contract Raffle is VRFConsumerBaseV2 {
 
     constructor(
         uint256 enteranceFee,
+        uint256 interval,
         address vrfCoordinatorV2,
         uint64 subscriptionId,
         uint32 callbackGasLimit,
@@ -59,6 +62,8 @@ contract Raffle is VRFConsumerBaseV2 {
         i_callbackGasLimit = callbackGasLimit;
         i_gasLane = gasLane;
         s_raffleState = RaffleState.OPEN;
+        s_lastTimeStamp = block.timestamp;
+        i_interval = interval;
     }
 
     //enter raffle by paying some amount
@@ -125,8 +130,19 @@ contract Raffle is VRFConsumerBaseV2 {
      * 4. Implicity, your subscription is funded with LINK.
      */
 
-    function checkUpkeep(bytes calldata /* checkData */) external override {
+    function checkUpkeep(
+        bytes calldata /* checkData */
+    )
+        external
+        override
+        returns (bool upkeepNeeded, bytes memory /*performamce data*/)
+    {
         bool isOpen = (RaffleState.OPEN == s_raffleState); //meaning the bool is true if RaffleState.OPEN == s_raffleState
+        //time passed =  block.timeStamp - lastTimeStamp >interval
+        bool timePassed = ((block.timestamp - s_lastTimeStamp) > i_interval);
+        bool hasPlayers = s_players.length > 0;
+        bool hasBalance = address(this).balance > 0;
+        upkeepNeeded = (timePassed && hasPlayers && hasBalance && isOpen); //if this returns we generate new Random number for another raffle bout
     }
 
     /* View/Pure Functions */
