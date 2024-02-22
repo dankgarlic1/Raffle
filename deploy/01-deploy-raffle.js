@@ -5,9 +5,7 @@ const {
 } = require("../helper-hardhat-config");
 const { verify } = require("../utils/verify");
 const { vrfCoordinatorV2MockAddress } = require("./00-deploy-mock");
-console.log(
-  `Vrf Coordinator mock address from mock deployment script: ${vrfCoordinatorV2MockAddress}`
-);
+
 require("dotenv").config();
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
@@ -42,7 +40,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const args = [
     entranceFee,
     interval,
-    "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    networkConfig[chainId]["vrfCoordinatorV2"],
     subscriptionId,
     callbackGasLimit,
     gasLane,

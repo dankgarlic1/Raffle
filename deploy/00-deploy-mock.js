@@ -1,4 +1,4 @@
-const { Network, network, ethers } = require("hardhat");
+const { network, ethers } = require("hardhat");
 const { developmentChains } = require("../helper-hardhat-config");
 let vrfCoordinatorV2MockAddress;
 

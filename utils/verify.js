@@ -1,7 +1,7 @@
 const verify = async (contractAddress, args) => {
   console.log("Verifying Contract");
   try {
-    await run("verify:verify", {
+    await hre.run("verify:verify", {
       address: contractAddress,
       constructorArguments: args,
     });
