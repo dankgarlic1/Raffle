@@ -6,7 +6,7 @@ require("hardhat-gas-reporter");
 require("hardhat-contract-sizer");
 require("dotenv").config();
 const COINMARKETCAP_API_KEY = process.env.COIN_MARKET_CAP_API_KEY;
-const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
+const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "www.aabracadabra.com";
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 module.exports = {
@@ -15,14 +15,15 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 31337,
+      blockConfirmations: 1,
       // gasPrice: 130000000000,
     },
-    // sepolia: {
-    //   url: SEPOLIA_RPC_URL,
-    //   accounts: [PRIVATE_KEY],
-    //   chainId: 11155111,
-    //   blockConfirmations: 6, //two reasons why we add this: 1) >>>Security 2) Give etherscan chance to index the transaction
-    // },
+    sepolia: {
+      url: SEPOLIA_RPC_URL,
+      accounts: [PRIVATE_KEY],
+      chainId: 11155111,
+      blockConfirmations: 6, //two reasons why we add this: 1) >>>Security 2) Give etherscan chance to index the transaction
+    },
   },
   etherscan: {
     apiKey: ETHERSCAN_API_KEY,
