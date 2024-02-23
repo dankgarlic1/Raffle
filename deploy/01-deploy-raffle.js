@@ -13,7 +13,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deployer } = await getNamedAccounts();
   const chainId = network.config.chainId;
   let subscriptionId, vrfCoordinatorV2Mock;
-  console.log("Deploying Raffle and waiting for Block Confirmations");
   if (developmentChains.includes(network.name)) {
     vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock");
     // vrfCoordinatorV2Address = vrfCoordinatorV2Mock.address;
@@ -51,6 +50,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   //   console.log(`Arg[${index}]: ${arg}`);
   // });
 
+  log("Deploying Raffle and waiting for Block Confirmations");
   const Raffle = await deploy("Raffle", {
     contract: "Raffle",
     from: deployer,

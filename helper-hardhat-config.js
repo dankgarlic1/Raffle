@@ -7,7 +7,7 @@ const networkConfig = {
     gasLane:
       "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c", //doesn't matter what we use here because we will already be mocking the Gas lane
     callbackGasLimit: "500000",
-    subscriptionId: "10",
+    subscriptionId: "1",
     interval: "30",
     vrfCoordinatorV2: "0x5FbDB2315678afecb367f032d93F642f64180aa3", //hardcoding it here because it always deploy mocks at this address in Hardhat
   },

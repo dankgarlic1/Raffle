@@ -50,15 +50,6 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     event RequestedRaffleWinner(uint256 indexed requestId);
     event WinnerPicked(address indexed winner);
 
-    /* Modifier */
-
-    modifier onlyOwner() {
-        if (msg.sender != i_owner) {
-            revert Raffle_notOwner();
-        }
-        _;
-    }
-
     constructor(
         uint256 enteranceFee,
         uint256 interval,
@@ -82,7 +73,7 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     //enter raffle by paying some amount
     function enterRaffle() public payable {
-        if (msg.value <= i_entranceFee) {
+        if (msg.value < i_entranceFee) {
             revert Raffle__notEnoughEthSent();
         }
         s_players.push(payable(msg.sender));
@@ -169,7 +160,7 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
             i_callbackGasLimit,
             NUM_WORDS
         );
-        // Quiz... is this redundant?
+
         emit RequestedRaffleWinner(requestId);
     }
 
@@ -217,5 +208,17 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     function getInterval() public view returns (uint256) {
         return i_interval;
+    }
+
+    function getSubscriptionId() public view returns (uint64) {
+        return i_subscriptionId;
+    }
+
+    function getGasLane() public view returns (bytes32) {
+        return i_gasLane;
+    }
+
+    function getCallbackGasLimit() public view returns (uint32) {
+        return i_callbackGasLimit;
     }
 }

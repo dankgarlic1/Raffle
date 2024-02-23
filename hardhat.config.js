@@ -5,6 +5,7 @@ require("solidity-coverage");
 require("hardhat-gas-reporter");
 require("hardhat-contract-sizer");
 require("dotenv").config();
+
 const COINMARKETCAP_API_KEY = process.env.COIN_MARKET_CAP_API_KEY;
 const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "www.aabracadabra.com";
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
