@@ -1,9 +1,11 @@
-require("@nomiclabs/hardhat-waffle");
-require("@nomiclabs/hardhat-etherscan");
+require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-verify");
 require("hardhat-deploy");
-require("solidity-coverage");
+require("@nomicfoundation/hardhat-ethers");
 require("hardhat-gas-reporter");
-require("hardhat-contract-sizer");
+require("@nomicfoundation/hardhat-ethers");
+require("hardhat-deploy");
+require("hardhat-deploy-ethers");
 require("dotenv").config();
 
 const COINMARKETCAP_API_KEY = process.env.COIN_MARKET_CAP_API_KEY;

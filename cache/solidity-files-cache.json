@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/harshit/Raffle/contracts/Raffle.sol": {
-      "lastModificationDate": 1708669226346,
-      "contentHash": "776c74e092eb12c95aaa668332966131",
+      "lastModificationDate": 1708780038943,
+      "contentHash": "dbd6b9c7cd1f1bb041c32524cb0d9726",
       "sourceName": "contracts/Raffle.sol",
       "solcConfig": {
         "version": "0.8.8",

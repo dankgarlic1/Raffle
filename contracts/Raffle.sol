@@ -71,11 +71,12 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     /* Functions */
 
-    //enter raffle by paying some amount
+    // enter raffle by paying some amount
     function enterRaffle() public payable {
         if (msg.value < i_entranceFee) {
             revert Raffle__notEnoughEthSent();
         }
+
         s_players.push(payable(msg.sender));
         // Emit an event when we update a dynamic array or mapping
         // Naming conevntion for making events is reversing the name,

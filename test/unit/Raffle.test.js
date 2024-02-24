@@ -10,22 +10,24 @@ const { assert, expect } = require("chai");
   ? describe.skip
   : describe("Raffle", async function () {
       let raffle;
+      let raffleContract;
       let vrfCoordinatorV2Mock;
-      let deployer;
+      let player;
       let raffleEntranceFee;
+
       const chainId = network.config.chainId;
 
       beforeEach(async () => {
-        deployer = (await getNamedAccounts()).deployer;
-        await deployments.fixture(["all"]);
-        raffle = await ethers.getContract("Raffle", deployer);
-        vrfCoordinatorV2Mock = await ethers.getContract(
-          "VRFCoordinatorV2Mock",
-          deployer
-        );
+        accounts = await ethers.getSigners();
+        //   deployer = accounts[0]
+        player = accounts[1];
+        await deployments.fixture(["mocks", "raffle"]);
+        vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock"); // Returns a new connection to the VRFCoordinatorV2Mock contract
+        raffleContract = await ethers.getContract("Raffle"); // Returns a new connection to the Raffle contract
+        raffle = raffleContract.connect(player); // Returns a new instance of the Raffle contract connected to player
+
         // raffleEntranceFee = networkConfig[chainId]["entranceFee"];
         raffleEntranceFee = await raffle.getEntranceFee();
-        console.log(`Raffle Entrance Fee: ${raffleEntranceFee}`);
       });
       describe("Constructor", async function () {
         it("Initializes the Raffle correctly", async function () {
@@ -60,16 +62,22 @@ const { assert, expect } = require("chai");
       });
 
       describe("enterRaffle", async function () {
-        it("Reverts when you don't pay enough", async () => {
+        it("reverts when you don't pay enough", async () => {
           await expect(raffle.enterRaffle()).to.be.revertedWithCustomError(
             raffle,
             "Raffle__notEnoughEthSent"
           );
         });
-        it("Pushes the participants into the array", async function () {
-          await raffle.enterRaffle({ raffleEntranceFee });
-          const playerFromContract = await raffle.getPlayers(0);
-          assert.equal(playerFromContract.toString(), deployer);
+
+        it("records player when they enter", async () => {
+          await raffle.enterRaffle({ value: raffleEntranceFee });
+          const contractPlayer = await raffle.getPlayers(0);
+          assert.equal(player.address, contractPlayer);
+        });
+        it("Emits an event", async () => {
+          await expect(
+            raffle.enterRaffle({ value: raffleEntranceFee })
+          ).to.be.emit(raffle, "RaffleEnter");
         });
       });
     });
