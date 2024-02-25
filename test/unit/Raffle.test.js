@@ -1,4 +1,4 @@
-const { network, getNamedAccounts, deployments, ethers } = require("hardhat");
+const { network, deployments, ethers } = require("hardhat");
 const {
   developmentChains,
   networkConfig,
@@ -14,6 +14,7 @@ const { assert, expect } = require("chai");
       let vrfCoordinatorV2Mock;
       let player;
       let raffleEntranceFee;
+      let interval;
 
       const chainId = network.config.chainId;
 
@@ -25,8 +26,9 @@ const { assert, expect } = require("chai");
         vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock"); // Returns a new connection to the VRFCoordinatorV2Mock contract
         raffleContract = await ethers.getContract("Raffle"); // Returns a new connection to the Raffle contract
         raffle = raffleContract.connect(player); // Returns a new instance of the Raffle contract connected to player
+        interval = await raffle.getInterval();
+        console.log("Interval:", interval);
 
-        // raffleEntranceFee = networkConfig[chainId]["entranceFee"];
         raffleEntranceFee = await raffle.getEntranceFee();
       });
       describe("Constructor", async function () {
@@ -78,6 +80,25 @@ const { assert, expect } = require("chai");
           await expect(
             raffle.enterRaffle({ value: raffleEntranceFee })
           ).to.be.emit(raffle, "RaffleEnter");
+        });
+        it("Cannot enter the raffle when it is closed", async () => {
+          /**
+           * To test if we can enter the raffle when it is calculating/closed,
+           * For that performUpkeep function must be called and that can be called only when checkupkeep  function returns true
+           * For checkUpkeep function to return true, three conditions should be met
+           * 1) Time should have passed(interval which we set in config)
+           * 2) no. of players>0
+           * 3) Contract should have balance(which we will have aitomatically since some player must have entered the raffle)
+           */
+          await network.provider.send("evm_increaseTime", [
+            interval.toNumber() + 1,
+          ]);
+          await network.provider.request({ method: "evm_mine", params: [] });
+          //we need to pretend to be a keepr for a second
+          await raffle.performUpkeep([]);
+          await expect(
+            raffle.enterRaffle({ value: raffleEntranceFee })
+          ).to.be.revertedWithCustomError(raffle, "Raffle__NotOpen");
         });
       });
     });
