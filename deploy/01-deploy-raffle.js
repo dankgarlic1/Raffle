@@ -59,6 +59,13 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     waitConfirmations: network.config.blockConfirmations || 1,
   });
   log(`Raffle deployed at ${Raffle.address}`);
+
+  if (developmentChains.includes(network.name)) {
+    //programatically add Consumer
+    const vrfCoordinatorV2 = await ethers.getContract("VRFCoordinatorV2Mock");
+    await vrfCoordinatorV2.addConsumer(subscriptionId, Raffle.address);
+    log("Consumer is added");
+  }
   if (
     !developmentChains.includes(network.name) &&
     process.env.ETHERSCAN_API_KEY

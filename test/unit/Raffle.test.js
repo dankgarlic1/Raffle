@@ -5,6 +5,8 @@ const {
 } = require("../../helper-hardhat-config");
 const { assert, expect } = require("chai");
 // const { assert } = require("chai");
+const BigNumber = require("bignumber.js");
+const { time, helpers } = require("@nomicfoundation/hardhat-network-helpers");
 
 !developmentChains.includes(network.name)
   ? describe.skip
@@ -27,16 +29,13 @@ const { assert, expect } = require("chai");
         raffleContract = await ethers.getContract("Raffle"); // Returns a new connection to the Raffle contract
         raffle = raffleContract.connect(player); // Returns a new instance of the Raffle contract connected to player
         interval = await raffle.getInterval();
-        console.log("Interval:", interval);
 
         raffleEntranceFee = await raffle.getEntranceFee();
       });
       describe("Constructor", async function () {
         it("Initializes the Raffle correctly", async function () {
           const raffleState = await raffle.getRaffleState();
-          const interval = await raffle.getInterval();
-          const vrfCoordinatorV2 = await raffle.getVRFCoordinator();
-          const entranceFee = await raffle.getEntranceFee();
+          const vrfCoordinatorV2Interface = await raffle.getVRFCoordinator();
           const subId = await raffle.getSubscriptionId();
           const gasLane = await raffle.getGasLane();
           const callbackGasLimit = await raffle.getCallbackGasLimit();
@@ -44,11 +43,11 @@ const { assert, expect } = require("chai");
           assert.equal(raffleState.toString(), "0");
           assert.equal(interval.toString(), networkConfig[chainId]["interval"]);
           assert.equal(
-            entranceFee.toString(),
+            raffleEntranceFee.toString(),
             networkConfig[chainId]["entranceFee"]
           );
           assert.equal(
-            vrfCoordinatorV2.toString(),
+            vrfCoordinatorV2Interface.toString(),
             networkConfig[chainId]["vrfCoordinatorV2"]
           );
           assert.equal(
@@ -88,17 +87,30 @@ const { assert, expect } = require("chai");
            * For checkUpkeep function to return true, three conditions should be met
            * 1) Time should have passed(interval which we set in config)
            * 2) no. of players>0
-           * 3) Contract should have balance(which we will have aitomatically since some player must have entered the raffle)
+           * 3) Contract should have balance(which we will have automatically since some player must have entered the raffle)
            */
+          await raffle.enterRaffle({ value: raffleEntranceFee });
+
           await network.provider.send("evm_increaseTime", [
-            interval.toNumber() + 1,
+            Number(interval) + 1,
           ]);
           await network.provider.request({ method: "evm_mine", params: [] });
-          //we need to pretend to be a keepr for a second
-          await raffle.performUpkeep([]);
+          console.log(typeof Number(interval));
+          //we need to pretend to be a keeper for a second
+          await raffle.performUpkeep("0x"); //changes state to calculating
           await expect(
             raffle.enterRaffle({ value: raffleEntranceFee })
           ).to.be.revertedWithCustomError(raffle, "Raffle__NotOpen");
+        });
+      });
+      describe("checkUpkeep", async function () {
+        it("Returns False if no one has entered the Raffle", async () => {
+          await network.provider.send("evm_increaseTime", [
+            Number(interval) + 1,
+          ]);
+          await network.provider.request({ method: "evm_mine", params: [] });
+          const { upkeepNeeded } = await raffle.checkUpkeep.staticCall("0x"); //copied from github
+          assert(!upkeepNeeded);
         });
       });
     });

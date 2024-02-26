@@ -127,15 +127,18 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         bytes memory /* checkData */
     )
         public
+        view
         override
         returns (bool upkeepNeeded, bytes memory /*performamce data*/)
     {
-        bool isOpen = (RaffleState.OPEN == s_raffleState); //meaning the bool is true if RaffleState.OPEN == s_raffleState
+        bool isOpen = RaffleState.OPEN == s_raffleState; //meaning the bool is true if RaffleState.OPEN == s_raffleState
         //time passed =  block.timeStamp - lastTimeStamp >interval
         bool timePassed = ((block.timestamp - s_lastTimeStamp) > i_interval);
+
         bool hasPlayers = s_players.length > 0;
         bool hasBalance = address(this).balance > 0;
         upkeepNeeded = (timePassed && hasPlayers && hasBalance && isOpen); //if this returns we generate new Random number for another raffle bout
+        return (upkeepNeeded, "0x0");
     }
 
     /**
