@@ -5,8 +5,6 @@ const {
 } = require("../../helper-hardhat-config");
 const { assert, expect } = require("chai");
 // const { assert } = require("chai");
-const BigNumber = require("bignumber.js");
-const { time, helpers } = require("@nomicfoundation/hardhat-network-helpers");
 
 !developmentChains.includes(network.name)
   ? describe.skip
@@ -159,6 +157,27 @@ const { time, helpers } = require("@nomicfoundation/hardhat-network-helpers");
             "Raffle__UpkeepNotNeeded"
           );
         });
-        it("", () => {});
+        it("Updates the Raffle state", async () => {
+          await raffle.enterRaffle({ value: raffleEntranceFee });
+          await network.provider.send("evm_increaseTime", [
+            Number(interval) + 1,
+          ]);
+          await network.provider.request({ method: "evm_mine", params: [] });
+          await raffle.performUpkeep("0x");
+          const raffleState = await raffle.getRaffleState();
+          assert(raffleState == 1); //1 means calculating, 0 means open
+        });
+        it("Emits a requestId", async () => {
+          await raffle.enterRaffle({ value: raffleEntranceFee });
+          await network.provider.send("evm_increaseTime", [
+            Number(interval) + 1,
+          ]);
+          await network.provider.request({ method: "evm_mine", params: [] });
+          const tx = await raffle.performUpkeep("0x");
+          const txResposne = await tx.wait(1);
+          const txReciept = txResposne.logs[1].args.requestId;
+          assert(Number(txReciept) > 0);
+        });
       });
+      describe("fulfillRandomWords", async function () {});
     });
