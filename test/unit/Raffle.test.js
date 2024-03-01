@@ -8,7 +8,7 @@ const { assert, expect } = require("chai");
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe("Raffle", async function () {
+  : describe("Raffle", function () {
       let raffle;
       let raffleContract;
       let vrfCoordinatorV2Mock;
@@ -30,7 +30,7 @@ const { assert, expect } = require("chai");
 
         raffleEntranceFee = await raffle.getEntranceFee();
       });
-      describe("Constructor", async function () {
+      describe("Constructor", function () {
         it("Initializes the Raffle correctly", async function () {
           const raffleState = await raffle.getRaffleState();
           const vrfCoordinatorV2Interface = await raffle.getVRFCoordinator();
@@ -60,7 +60,7 @@ const { assert, expect } = require("chai");
         });
       });
 
-      describe("enterRaffle", async function () {
+      describe("enterRaffle", function () {
         it("reverts when you don't pay enough", async () => {
           await expect(raffle.enterRaffle()).to.be.revertedWithCustomError(
             raffle,
@@ -101,7 +101,7 @@ const { assert, expect } = require("chai");
           ).to.be.revertedWithCustomError(raffle, "Raffle__NotOpen");
         });
       });
-      describe("checkUpkeep", async function () {
+      describe("checkUpkeep", function () {
         it("Returns False if no one has entered the Raffle", async () => {
           await network.provider.send("evm_increaseTime", [
             Number(interval) + 1,
@@ -140,7 +140,7 @@ const { assert, expect } = require("chai");
           assert(upkeepNeeded);
         });
       });
-      describe("performUpkeep", async function () {
+      describe("performUpkeep", function () {
         it("Can only run if checkUpkeep returns true", async () => {
           await raffle.enterRaffle({ value: raffleEntranceFee });
           await network.provider.send("evm_increaseTime", [
@@ -152,10 +152,9 @@ const { assert, expect } = require("chai");
         });
 
         it("If checkUpkeep returns false it Reverts", async () => {
-          expect(raffle.performUpkeep("0x")).to.be.revertedWithCustomError(
-            raffle,
-            "Raffle__UpkeepNotNeeded"
-          );
+          await expect(
+            raffle.performUpkeep("0x")
+          ).to.be.revertedWithCustomError(raffle, "Raffle__UpkeepNotNeeded");
         });
         it("Updates the Raffle state", async () => {
           await raffle.enterRaffle({ value: raffleEntranceFee });
@@ -179,5 +178,18 @@ const { assert, expect } = require("chai");
           assert(Number(txReciept) > 0);
         });
       });
-      describe("fulfillRandomWords", async function () {});
+      describe("fulfillRandomWords", function () {
+        beforeEach(async () => {
+          await raffle.enterRaffle({ value: raffleEntranceFee });
+          await network.provider.send("evm_increaseTime", [
+            Number(interval) + 1,
+          ]);
+          await network.provider.request({ method: "evm_mine", params: [] });
+        });
+        it("Called after performUpkeep", async () => {
+          await expect(
+            vrfCoordinatorV2Mock.fulfillRandomWords(0, raffle.getAddress())
+          ).to.be.revertedWith("nonexistent request");
+        });
+      });
     });
