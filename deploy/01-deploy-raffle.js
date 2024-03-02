@@ -12,6 +12,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy, log } = deployments;
   const { deployer } = await getNamedAccounts();
   const chainId = network.config.chainId;
+  const VRF_SUB_FUND_AMOUNT = ethers.parseEther("2");
   let subscriptionId, vrfCoordinatorV2Mock;
   if (developmentChains.includes(network.name)) {
     vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock");
@@ -65,6 +66,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const vrfCoordinatorV2 = await ethers.getContract("VRFCoordinatorV2Mock");
     await vrfCoordinatorV2.addConsumer(subscriptionId, Raffle.address);
     log("Consumer is added");
+    await vrfCoordinatorV2.fundSubscription(
+      subscriptionId,
+      VRF_SUB_FUND_AMOUNT
+    );
   }
   if (
     !developmentChains.includes(network.name) &&
